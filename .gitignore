@@ -1,0 +1,10 @@
+.env
+_config.json
+_ledger.jsonl
+
+# Material de terceiros usado como fonte da análise — não redistribuir.
+doc/generate-skill-guide.pdf
+doc/out.txt
+
+# Imagens originais já versionadas em assets/ com nome limpo.
+doc/ChatGPT*.png
