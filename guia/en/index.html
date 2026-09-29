@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>generator-skill — the /generate skill in two versions</title>
+<meta content="Two versions of the /generate skill for agents: one runs a local model on the GPU (zero cost), and the other runs entirely through a paid API, with a cost gate, ledger, and prompt log." name="description"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;800&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;600&amp;display=swap" rel="stylesheet"/>
+<style>
+  :root{
+    --bg:#0c0c10; --bg2:#14141b; --card:#16161e; --line:#272730;
+    --txt:#e9e9ee; --mut:#9a9aa6; --amb:#E2A23B; --amb2:#f0c070; --sky:#38bdf8; --pro:#cbd5e1;
+    color-scheme:dark;
+  }
+  body.light{
+    --bg:#f6f7f9; --bg2:#eceef2; --card:#ffffff; --line:#e1e3ea;
+    --txt:#1a1a22; --mut:#5b5b68; --amb:#b9791d; --amb2:#a16207; --sky:#0369a1; --pro:#b45309;
+    color-scheme:light;
+  }
+  body.light .hero .glow{opacity:.5}
+  body.light pre{background:#0e0e14;color:#d6d6e0}
+  body.light pre .c{color:#8a8a98}
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--txt);font:16px/1.65 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  h1,h2,h3{font-family:Sora,sans-serif;line-height:1.15;margin:0}
+  a{color:var(--amb);text-decoration:none}
+  code,pre{font-family:"JetBrains Mono",monospace}
+  .wrap{max-width:1160px;margin:0 auto;padding:0 22px}
+  .mut{color:var(--mut)} .amb{color:var(--amb)}
+  .chip{display:inline-block;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--amb);font-weight:600;font-family:Sora}
+  nav{position:sticky;top:0;z-index:30;backdrop-filter:blur(12px);background:rgba(12,12,16,.78);border-bottom:1px solid var(--line)}
+  nav .wrap{display:flex;align-items:center;gap:22px;height:60px}
+  nav .brand{display:flex;align-items:center;gap:8px;font-family:Sora;font-weight:800;letter-spacing:-.02em;color:var(--amb)}
+  nav .brand .emoji{font-size:1.25rem}
+  nav .sep{color:var(--mut);opacity:.45}
+  nav .inema{color:var(--sky);font-weight:600;font-size:.88rem;font-family:Sora}
+  nav .inema:hover{filter:brightness(1.15)}
+  nav .pro{color:var(--pro);font-weight:600;font-size:.88rem;font-family:Sora}
+  nav .pro:hover{filter:brightness(1.15)}
+  nav .clubpro{display:inline-flex;align-items:center;gap:6px}
+  nav .links{margin-left:auto;display:flex;align-items:center;gap:20px;font-size:.92rem}
+  nav .links a.sec{color:var(--mut)} nav .links a.sec:hover{color:var(--txt)}
+  .tgl{background:var(--bg2);border:1px solid var(--line);color:var(--txt);width:38px;height:38px;border-radius:10px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:1.05rem}
+  .tgl:hover{border-color:var(--amb)}
+  .btn{display:inline-block;background:var(--amb);color:#1a1206;font-weight:600;padding:.6em 1.05em;border-radius:10px;font-family:Sora}
+  .btn.ghost{background:transparent;color:var(--txt);border:1px solid var(--line)}
+  @media(max-width:760px){nav .links a.sec{display:none}}
+  .hero{position:relative;overflow:hidden;border-bottom:1px solid var(--line)}
+  .hero .glow{position:absolute;inset:-40% -20% auto auto;width:70%;height:600px;background:radial-gradient(closest-side,rgba(226,162,59,.22),transparent 70%);pointer-events:none}
+  .hero .wrap{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center;padding:74px 22px}
+  .hero h1{font-size:clamp(2.2rem,5vw,3.5rem);font-weight:800;letter-spacing:-.025em}
+  .hero p.lead{font-size:1.18rem;color:var(--mut);margin:1.1em 0 1.6em;max-width:34ch}
+  .hero .cta{display:flex;gap:12px;flex-wrap:wrap}
+  .hero figure{margin:0;border-radius:16px;overflow:hidden;border:1px solid var(--line);box-shadow:0 30px 80px -30px #000}
+  .hero figure img{width:100%;display:block}
+  @media(max-width:780px){.hero .wrap{grid-template-columns:1fr;padding:48px 22px}}
+  section{padding:62px 0;border-bottom:1px solid var(--line)}
+  section h2{font-size:clamp(1.5rem,3.4vw,2.1rem);font-weight:800;letter-spacing:-.02em}
+  section .sub{color:var(--mut);margin:.6em 0 2em;max-width:62ch}
+  .grid{display:grid;gap:16px}
+  .g3{grid-template-columns:repeat(3,1fr)} .g4{grid-template-columns:repeat(4,1fr)} .g2{grid-template-columns:repeat(2,1fr)}
+  @media(max-width:820px){.g3,.g4{grid-template-columns:1fr 1fr}}
+  @media(max-width:540px){.g2,.g3,.g4{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px}
+  .card h3{font-size:1.05rem;margin-bottom:.4em}
+  .card p{color:var(--mut);font-size:.92rem;margin:0}
+  .num{display:inline-flex;width:30px;height:30px;align-items:center;justify-content:center;border-radius:8px;background:rgba(226,162,59,.14);color:var(--amb);font-family:Sora;font-weight:800;font-size:.9rem;margin-bottom:.7em}
+  .flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+  .flow span{background:var(--bg2);border:1px solid var(--line);border-radius:999px;padding:.45em .9em;font-size:.85rem;font-family:Sora;font-weight:600}
+  .flow .arr{color:var(--amb);border:none;background:none;padding:0 .1em}
+  pre{background:#0a0a0e;border:1px solid var(--line);border-radius:12px;padding:16px 18px;overflow:auto;font-size:.86rem;line-height:1.6;color:#d6d6e0}
+  pre .c{color:#6f6f7c} pre .k{color:var(--amb2)} pre .s{color:#9ece6a}
+  .step{display:grid;grid-template-columns:46px 1fr;gap:16px;margin-bottom:26px}
+  .step .b{width:46px;height:46px;border-radius:12px;background:var(--amb);color:#1a1206;font-family:Sora;font-weight:800;font-size:1.25rem;display:flex;align-items:center;justify-content:center}
+  .step h3{font-size:1.12rem;margin-bottom:.3em}
+  .step p{color:var(--mut);margin:.2em 0 .7em}
+  .ex{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media(max-width:680px){.ex{grid-template-columns:1fr}}
+  .ex figure{margin:0;border-radius:14px;overflow:hidden;border:1px solid var(--line)}
+  .ex figure img{width:100%;display:block}
+  .ex figcaption{padding:12px 14px;font-size:.88rem;color:var(--mut);background:var(--card)}
+  .phase{display:flex;gap:14px;padding:16px 0;border-bottom:1px solid var(--line)}
+  .phase:last-child{border:none}
+  .phase .tag{flex:0 0 92px;font-family:Sora;font-weight:800;color:var(--amb)}
+  .phase .d strong{display:block;margin-bottom:.2em}
+  .phase .d span{color:var(--mut);font-size:.92rem}
+  footer{padding:46px 0;text-align:center;color:var(--mut);font-size:.9rem}
+  .pill{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:.3em .8em;font-size:.78rem;color:var(--mut);margin:0 4px}
+  table.cmp{width:100%;border-collapse:collapse;margin-top:8px;font-size:.92rem}
+  table.cmp th,table.cmp td{border:1px solid var(--line);padding:10px 12px;text-align:left;vertical-align:top}
+  table.cmp th{font-family:Sora;font-weight:600;background:var(--bg2)}
+  table.cmp td:first-child{color:var(--mut)}
+  .tblwrap{overflow-x:auto}
+</style>
+<link href="https://inematds.github.io/generator-skill/guia/" hreflang="pt-BR" rel="alternate"/><link href="https://inematds.github.io/generator-skill/guia/en/" hreflang="en" rel="alternate"/><link href="https://inematds.github.io/generator-skill/guia/es/" hreflang="es" rel="alternate"/></head>
+<body><div class="inema-lang" style="position:fixed;right:14px;bottom:14px;z-index:9999;display:flex;gap:2px;padding:4px;border-radius:10px;background:rgba(12,12,16,.82);border:1px solid rgba(226,162,59,.45);font:600 12px/1 Sora,Inter,system-ui,sans-serif;backdrop-filter:blur(8px)" translate="no"><a href="../" hreflang="pt-BR" style="padding:6px 8px;border-radius:7px;text-decoration:none;color:#e9e9ee">PT</a><a href="./" hreflang="en" style="padding:6px 8px;border-radius:7px;text-decoration:none;color:#1a1206;background:#E2A23B">EN</a><a href="../es/" hreflang="es" style="padding:6px 8px;border-radius:7px;text-decoration:none;color:#e9e9ee">ES</a></div>
+<nav><div class="wrap">
+<a class="brand" href="#top"><span class="emoji">🎛️</span> generator-skill</a>
+<span class="sep">|</span>
+<span class="clubpro">
+<a class="inema" href="https://inema.club" rel="noopener" target="_blank">INEMA.CLUB</a>
+<span class="sep">-</span>
+<a class="pro" href="https://inema.pro" rel="noopener" target="_blank">PRO</a>
+</span>
+<div class="links">
+<a class="sec" href="#oque">What it is</a>
+<a class="sec" href="#fluxo">How it works</a>
+<a class="sec" href="#versoes">Versions</a>
+<a class="sec" href="#guia">User guide</a>
+<a class="sec" href="#exemplos">Examples</a>
+<a class="sec" href="#roadmap">Roadmap</a>
+<button aria-label="Switch theme" class="tgl" id="themeToggle" title="Switch theme">🌙</button>
+<a class="btn" href="https://github.com/inematds/generator-skill" rel="noopener" target="_blank">GitHub</a>
+</div>
+</div></nav>
+<header class="hero" id="top">
+<div class="glow"></div>
+<div class="wrap">
+<div>
+<span class="chip">Skill /generate · two versions</span>
+<h1>One command generates images and video—through the most <span class="amb">cheap</span>.</h1>
+<p class="lead">Cost-based routing, approval before spending, a ledger, and the prompt saved next to each file.</p>
+<div class="cta">
+<a class="btn" href="#guia">Start the guide</a>
+<a class="btn ghost" href="https://github.com/inematds/generator-skill" rel="noopener" target="_blank">View on GitHub</a>
+</div>
+</div>
+<figure><img alt="Project cover for generator-skill" src="../assets/hero.png"/></figure>
+</div>
+</header>
+<section id="oque"><div class="wrap">
+<span class="chip">What it is</span>
+<h2>A skill the agent reads before generating any media</h2>
+<p class="sub">A skill is a folder of Markdown files that works as an operating manual: the agent rereads it each time, so rules written once apply every time. This one covers images and video—and, most importantly, what tends to go wrong around them.</p>
+<div class="grid g3">
+<div class="card"><h3>💸 Route by cost</h3><p>Chooses the cheapest route that can handle the task and says which one it used. Pricing lives in a dated file, not in the agent's guess.</p></div>
+<div class="card"><h3>🛑 Don’t spend without approval</h3><p>Quotes the cost in dollars and waits for the “go-ahead.” One approval covers one run. The monthly cap is cumulative, because a per-run gate lets thirty small expenses through.</p></div>
+<div class="card"><h3>🗂️ Don’t lose the prompt</h3><p>A flat library, with a JSON file next to each file containing the prompt, model, parameters, and cost. Three months later, you can still tell what made that image.</p></div>
+</div>
+</div></section>
+<section id="fluxo"><div class="wrap">
+<span class="chip">How it works</span>
+<h2>Five steps, always the same</h2>
+<p class="sub">The workflow is the same in both versions. What changes is where step 1 points.</p>
+<div class="flow">
+<span>Routes</span><span class="arr">→</span>
+<span>Prepare references</span><span class="arr">→</span>
+<span>Quotes and approvals</span><span class="arr">→</span>
+<span>Generates</span><span class="arr">→</span>
+<span>Saves flat</span><span class="arr">→</span>
+<span>Records</span>
+</div>
+<div class="grid g3" style="margin-top:28px">
+<div class="card"><span class="num">1</span><h3>Routes to the most economical option</h3><p>Choose the model and provider, and read that model’s recipe before calling it — endpoint, authentication, request body format, and where the file appears in the response.</p></div>
+<div class="card"><span class="num">2</span><h3>Uses real references</h3><p>Logo, face, and style come from files in <code>refs/</code>. Describing a logo in words gets you the wrong logo every time — if the file doesn't exist, the skill stops and asks.</p></div>
+<div class="card"><span class="num">3</span><h3>Generates, synchronously or asynchronously</h3><p>The video model returns a job ID; the skill checks its status and downloads the result right away because the result URL expires within hours. The ID is saved so you can resume without paying again.</p></div>
+<div class="card"><span class="num">4</span><h3>Saves to a flat folder</h3><p>No subfolders. It looks messy, but it’s the opposite: any gallery, script, or search can read the entire library without configuration.</p></div>
+<div class="card"><span class="num">5</span><h3>Records everything</h3><p>JSON file with the same basename next to the file, plus one line in the ledger. The charge happens when the provider accepts the job — not when the file arrives.</p></div>
+<div class="card"><span class="num">+</span><h3>Grows one file at a time</h3><p>A new model is a ten-minute Markdown recipe. Nothing else changes — that’s what lets the system survive monthly model changes.</p></div>
+</div>
+</div></section>
+<section id="versoes"><div class="wrap">
+<span class="chip">Versions</span>
+<h2>Two, because “cheaper” has opposite answers</h2>
+<p class="sub">On a machine running a model locally, the cheapest route is free and the cost gate almost never triggers. Without that, every generation costs money — and the gate becomes the heart of the skill.</p>
+<div class="tblwrap"><table class="cmp">
+<tr><th></th><th>generate-local</th><th>generate-api</th></tr>
+<tr><td>For</td><td>machine running a model on it</td><td>any machine, everything via API</td></tr>
+<tr><td>Cheapest route</td><td><strong>local, $0</strong> (flux2-klein on the GPU)</td><td>paid cheap model, ~$0,02</td></tr>
+<tr><td>Billing model</td><td>hardware already paid for, zero marginal cost</td><td>pay-as-you-go per call</td></tr>
+<tr><td>Paid route</td><td>exception—only two reasons</td><td>is the only way</td></tr>
+<tr><td>Image with legible text</td><td>paid route (local model gets letters wrong)</td><td>top model, paid</td></tr>
+<tr><td>Default video</td><td>local 2.5D render, $0</td><td>generative, $0,20–0,35/s</td></tr>
+<tr><td>Cost gate</td><td>exists, almost never triggers</td><td>triggers on every run</td></tr>
+<tr><td>Draft cheaply / finalize at higher cost</td><td>doesn’t make sense—it’s the same model</td><td>saves the most</td></tr>
+<tr><td>Depends on</td><td>local image server up</td><td><code>FAL_KEY</code> + <code>KIE_API_KEY</code> in a <code>.env</code></td></tr>
+</table></div>
+</div></section>
+<section id="pre"><div class="wrap">
+<span class="chip">Prerequisites</span>
+<h2>What needs to be in place</h2>
+<p class="sub">Choose one of the two versions per workspace — both declare <code>name: generate</code>.</p>
+<div class="grid g3">
+<div class="card"><h3>Python 3</h3><p>The scripts use only the standard library. No dependencies to install.</p><pre><span class="c"># check</span>
+<span class="k">python3 --version</span></pre></div>
+<div class="card"><h3>Local version: image server</h3><p>The skill checks availability before generating and, if it's down, fails with instructions on how to start it — instead of silently switching to a paid route.</p><pre><span class="c"># should return status ok</span>
+<span class="k">curl</span> <span class="s">localhost:8000/health</span></pre></div>
+<div class="card"><h3>API version: two keys</h3><p>Aggregators offer dozens of models with one key and one bill. Add <code>.env</code> to the <code>.gitignore</code> on the first day.</p><pre><span class="c"># .env</span>
+FAL_KEY=<span class="s">sua_chave</span>
+KIE_API_KEY=<span class="s">sua_chave</span></pre></div>
+</div>
+</div></section>
+<section id="guia"><div class="wrap">
+<span class="chip">User guide · step by step</span>
+<h2>From cloning to the first generation</h2>
+<p class="sub">Real commands. The local version generates for free; the API version never calls the API without explicit approval in the command.</p>
+<div class="step"><div class="b">1</div><div>
+<h3>Clone the repository</h3>
+<p>The two versions live in separate folders, each with its own README.</p>
+<pre><span class="k">git clone</span> <span class="s">https://github.com/inematds/generator-skill</span>
+<span class="k">cd</span> generator-skill</pre>
+</div></div>
+<div class="step"><div class="b">2</div><div>
+<h3>Install the version that works for your machine</h3>
+<p>One per workspace. If you install both with the same name, they collide.</p>
+<pre><span class="c"># machine running a local model</span>
+<span class="k">cp -r</span> generate-local ~/.claude/skills/generate
+
+<span class="c"># machine without a local model — everything through a paid API</span>
+<span class="k">cp -r</span> generate-api &lt;workspace&gt;/.claude/skills/generate</pre>
+</div></div>
+<div class="step"><div class="b">3</div><div>
+<h3>Configure (API version only)</h3>
+<p>Choose the library folder and monthly alert cap. Limit tip: load a small amount of credit with your first payment — the provider can't spend what it doesn't have.</p>
+<pre><span class="c"># _config.json, created on the first run</span>
+{ <span class="s">"pasta"</span>: <span class="s">"~/generations"</span>, <span class="s">"teto_mensal_usd"</span>: 50 }</pre>
+</div></div>
+<div class="step"><div class="b">4</div><div>
+<h3>Generate — local version</h3>
+<p>Zero cost, just a few seconds. With no marginal cost, drafts and finals use the same model: vary the seed as much as you like.</p>
+<pre><span class="k">python3</span> scripts/gerar-local.py \
+  <span class="k">--prompt</span> <span class="s">"capa de curso, formas geométricas, fundo escuro"</span> \
+  <span class="k">--projeto</span> capa-curso <span class="k">--desc</span> hero <span class="k">-n</span> 3
+
+<span class="c"># OK ...capa-curso_hero_1785563764.png  (6.2s, $0)</span></pre>
+</div></div>
+<div class="step"><div class="b">5</div><div>
+<h3>Get a quote first — API version</h3>
+<p><code>--estimar</code> prints the quote and exits without spending. This is what you show the person before asking for the “go-ahead.”</p>
+<pre><span class="k">python3</span> scripts/gerar.py <span class="k">--rota</span> fal <span class="k">--model</span> &lt;id&gt; \
+  <span class="k">--prompt</span> <span class="s">"..."</span> <span class="k">--projeto</span> capa <span class="k">--desc</span> hero \
+  <span class="k">--custo</span> 0.04 <span class="k">--estimar</span>
+
+<span class="c"># QUOTE  cost $0.04 · month $0.00 of $50 -&gt; would be $0.04</span>
+<span class="c"># Nothing was spent.</span></pre>
+</div></div>
+<div class="step"><div class="b">6</div><div>
+<h3>Run only after approval</h3>
+<p>No <code>--confirmar</code> the script refuses to call the API. Authorization is in the command, not in the operator’s memory.</p>
+<pre><span class="k">python3</span> scripts/gerar.py ... <span class="k">--confirmar</span>
+
+<span class="c"># async video: submits, polls, downloads, and saves the task id</span>
+<span class="k">python3</span> scripts/gerar.py ... <span class="k">--custo</span> 1.75 <span class="k">--async --confirmar</span></pre>
+</div></div>
+<div class="step"><div class="b">7</div><div>
+<h3>Check the cost</h3>
+<p>The charge happens when the provider accepts the job. If generation fails afterward, the money is already gone — and it’s marked as pending instead of disappearing.</p>
+<pre><span class="k">python3</span> scripts/registrar.py <span class="k">--saldo</span>
+
+<span class="c"># 2 run(s) charged without a saved file:</span>
+<span class="c">#   ...1f5462ee  incomplete  $0.40</span>
+<span class="c">#   ...fb8bb889  failed      $2.00  task T3</span>
+
+<span class="c"># when the bill arrives, correct the amount</span>
+<span class="k">python3</span> scripts/registrar.py <span class="k">--corrigir</span> &lt;run_id&gt; <span class="k">--cost</span> 1.9</pre>
+</div></div>
+<div class="step"><div class="b">8</div><div>
+<h3>Add a new model</h3>
+<p>Copy the recipe template, fill it in using the provider's documentation, and add the entry to the price table with the date. Ten minutes, and nothing else changes.</p>
+<pre><span class="k">cp</span> models/_template.md models/meu-modelo.md
+<span class="c"># fill in: model id, method (sync/async), endpoint, auth,</span>
+<span class="c"># request body and where the file appears in the response</span></pre>
+</div></div>
+</div></section>
+<section id="exemplos"><div class="wrap">
+<span class="chip">Examples</span>
+<h2>How the system works inside</h2>
+<p class="sub">The complete workflow and the route decision behind the split into two versions.</p>
+<div class="ex">
+<figure><img alt="Diagram of the skill workflow: text inputs, references, and parameters go through the /generate command and come out as an image or video, in five steps" src="../assets/ex1.jpg"/><figcaption>The five steps: route to the most affordable model, use real references, generate, save everything in one folder, and record the prompt, model, and parameters.</figcaption></figure>
+<figure><img alt="Creative models accessible through two routes: a monthly subscription aggregator or pay-as-you-go aggregators" src="../assets/ex2.jpg"/><figcaption>The same models, different accounts: a fixed monthly subscription or pay-as-you-go per call. The API version assumes pay-as-you-go — it starts at zero, and each generation’s cost can be tracked.</figcaption></figure>
+</div>
+</div></section>
+<section id="roadmap"><div class="wrap">
+<span class="chip">Roadmap</span>
+<h2>Where it stands and what’s missing</h2>
+<p class="sub">What was verified with a real run is marked as verified; everything else is marked as unverified in the recipes themselves.</p>
+<div class="phase"><div class="tag">Ready</div><div class="d"><strong>Local version, end to end</strong><span>Generation, flat-file saving, JSON logging, ledger, and clean failure with the server offline — verified with a real call.</span></div></div>
+<div class="phase"><div class="tag">Ready</div><div class="d"><strong>API version, with the money-losing paths covered</strong><span>Quotes first, refuses without approval, enforces the monthly cap, resumes by task id, and records the transaction in the ledger even when generation fails after charging.</span></div></div>
+<div class="phase"><div class="tag">Missing</div><div class="d"><strong>Verify IDs and prices against the actual APIs</strong><span>The model IDs came from third-party material and are marked <em>unverified</em>. First step for anyone installing it, always with a quote first.</span></div></div>
+<div class="phase"><div class="tag">Idea</div><div class="d"><strong>Library gallery</strong><span>A single page that reads the flat folder and displays everything generated, with each file’s prompt loaded from its adjacent JSON file.</span></div></div>
+</div></section>
+<footer>
+<div class="wrap">
+<div class="pill">Claude Code Skill</div><div class="pill">Python 3, no dependencies</div><div class="pill">fal.ai · Kie AI</div><div class="pill">Local GPU</div>
+<p style="margin-top:18px">generator-skill · two versions of the /generate skill ·
+      <a href="https://github.com/inematds/generator-skill">github.com/inematds/generator-skill</a> ·
+      <a href="https://inema.club">INEMA.CLUB</a></p>
+</div>
+</footer>
+<script>
+  (function(){
+    var KEY='generator-skill-theme';
+    var b=document.body, t=document.getElementById('themeToggle');
+    if(localStorage.getItem(KEY)==='light'){ b.classList.add('light'); t.textContent='☀️'; }
+    t.addEventListener('click',function(){
+      var light=b.classList.toggle('light');
+      t.textContent=light?'☀️':'🌙';
+      localStorage.setItem(KEY, light?'light':'dark');
+    });
+  })();
+</script>
+</body>
+</html>

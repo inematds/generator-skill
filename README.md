@@ -1,5 +1,7 @@
 # generator-skill
 
+**🇧🇷 [Português](README.md) · 🇺🇸 [English](README.en.md) · 🇪🇸 [Español](README.es.md)**
+
 ![Uma skill, todo o fluxo: /generate roteia para o modelo mais econômico, usa referências reais, gera imagem ou vídeo, salva tudo numa pasta única e registra prompt, modelo e parâmetros](assets/hero-fluxo.png)
 
 ## 📖 Guia de uso
